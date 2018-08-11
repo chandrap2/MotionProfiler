@@ -77,6 +77,11 @@ public class MotionProfiler {
 		return points;
 	}
 	
+	// default 10ms dt
+	public ArrayList<double[]> generateMotionProfile(double distance) {
+		return generateMotionProfile(distance, 0.010);
+	}
+	
 	private void calculateConstants(double distance) {
 		timeToMaxAchievableVel = Math.min(Math.sqrt(distance / maxAccel), maxVel / maxAccel);
 		double maxAchieveableVel = timeToMaxAchievableVel * maxAccel;
@@ -131,8 +136,8 @@ public class MotionProfiler {
 	}
 	
 	public static void main(String[] args) {
-		MotionProfiler test = new MotionProfiler(0.6, 0.5, 1);
-		ArrayList<double[]> points = test.generateMotionProfile(1.6, 0.1);
+		MotionProfiler test = new MotionProfiler(0.54, 0.5, 1);
+		ArrayList<double[]> points = test.generateMotionProfile(0.84);
 
 		String path = "C:/Users/Chandra/Documents/points.csv";
 		FileWriter fw = null;
