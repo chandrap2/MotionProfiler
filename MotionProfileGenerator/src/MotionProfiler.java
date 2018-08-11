@@ -21,7 +21,6 @@ public class MotionProfiler {
 	private double displacementAccelCoastDeccel;
 	private double timeToAccelCoastDeccelCoast;
 	
-	
 	public MotionProfiler(double maxVel, double maxAccel, double maxJerk) {
 		this.maxVel = Math.abs(maxVel);
 		this.maxAccel = Math.abs(maxAccel);
@@ -33,8 +32,7 @@ public class MotionProfiler {
 		double timeToComplete = timeToAccelCoastDeccelCoast + timeToAccelCoastDeccel;
 		ArrayList<double[]> points = new ArrayList<double[]>();
 
-		System.out.println("time to complete: " + timeToComplete);
-
+		// vel at time t is found from algebraic integration, while position is found from numerical integration
 		double v1 = maxJerk * timeToMaxAchievableAccel * timeToMaxAchievableAccel / 2; // vel at maxAccel
 		double v2 = v1 + maxJerk * timeToMaxAchievableAccel * timeToMaxAchievableAccelCoast; // vel after accel coast
 		double v3 = v2 + v1; // vel after accel-coast-deccel
@@ -42,17 +40,10 @@ public class MotionProfiler {
 		double v4 = v3 - v1; // vel after accel-coast-deccel-zero-accel
 		double v5 = v3 - v2; // vel after accel-coast-deccel-zero-accel-coast
 		
-		double p1 = maxJerk * timeToMaxAchievableAccel * timeToMaxAchievableAccel * timeToMaxAchievableAccel / 6; // pos at maxAccel
-		double p2 = p1 + (v2 + v1) * timeToMaxAchievableAccelCoast / 2;
-		double p3 = displacementAccelCoastDeccel;
-		double p4 = p3 + (v3 * timeToAccelCoastDeccelCoast - timeToAccelCoastDeccel);
-		double p5 = p4 + (p3 - p2);
-		double p6 = p5 + (p2 - p1);
-				
 		double currTime = 0;
-		double currVel = 0;
 		double currPos = 0;
 		
+		// {time, vel, pos}
 		double[] currPoint = new double[3];
 		
 		while (currTime <= timeToComplete) {
@@ -60,50 +51,23 @@ public class MotionProfiler {
 			
 			if (currTime > timeToComplete - timeToMaxAchievableAccel) {
 				double t6 = timeToComplete - timeToMaxAchievableAccel;
-				currVel = v5 + lookUpAccel(currTime - t6) * (currTime - t6) / 2 + lookUpAccel(timeToComplete - timeToMaxAchievableAccel) * (currTime - t6);
-//				currPos = p6 + lookUpAccel(currTime - t6) * (currTime - t6) * (currTime - t6) / 6 +
-//						lookUpAccel(timeToComplete - timeToMaxAchievableAccel) * (currTime - t6) * (currTime - t6) / 2 +
-//						v5 * (currTime - t6);
-				currPoint[1] = currVel;
-//				currPoint[2] = currPos;
+				currPoint[1] = v5 + lookUpAccel(currTime - t6) * (currTime - t6) / 2 + lookUpAccel(timeToComplete - timeToMaxAchievableAccel) * (currTime - t6);
 			} else if (currTime > timeToAccelCoastDeccelCoast + timeToMaxAchievableAccel) {
-				currVel = v4 + (lookUpAccel(currTime) * (currTime - (timeToAccelCoastDeccelCoast + timeToMaxAchievableAccel)));
-//				currPos = p5 + (v4 + currVel) * (currTime - (timeToAccelCoastDeccelCoast + timeToMaxAchievableAccel)) / 2;
-				currPoint[1] = currVel;
-//				currPoint[2] = currPos;
+				currPoint[1] = v4 + (lookUpAccel(currTime) * (currTime - (timeToAccelCoastDeccelCoast + timeToMaxAchievableAccel)));
 			} else if (currTime > timeToAccelCoastDeccelCoast) {
-				currVel = v3 + (lookUpAccel(currTime) * (currTime - timeToAccelCoastDeccelCoast)) / 2;
-//				currPos = p4 + (-lookUpAccel(currTime) * currTime * currTime / 6 + v3 * currTime);
-				currPoint[1] = currVel;
-//				currPoint[2] = currPos;
+				currPoint[1] = v3 + (lookUpAccel(currTime) * (currTime - timeToAccelCoastDeccelCoast)) / 2;
 			} else if (currTime > timeToAccelCoastDeccel) {
-				currVel = v3;
-//				currPos = p3 + v3 * (currTime - timeToAccelCoastDeccel);
-				currPoint[1] = currVel;
-//				currPoint[2] = currPos;
+				currPoint[1] = v3;
 			} else if (currTime > timeToMaxAchievableAccel + timeToMaxAchievableAccelCoast) {
 				double t2 = timeToMaxAchievableAccel + timeToMaxAchievableAccelCoast;
-				
-				currVel = v2 + (currTime - t2) * (lookUpAccel(currTime) + lookUpAccel(t2)) / 2;
-//				currPos = p2 + -lookUpAccel(currTime) * (currTime - t2) * (currTime - t2) / 6 +
-//						lookUpAccel(t2) * (currTime - t2) * (currTime - t2) / 2 +
-//						v2 * (currTime - t2);
-				currPoint[1] = currVel;
-//				currPoint[2] = currPos;
+				currPoint[1] = v2 + (currTime - t2) * (lookUpAccel(currTime) + lookUpAccel(t2)) / 2;
 			} else if (currTime > timeToMaxAchievableAccel) {
-				currVel = v1 + lookUpAccel(currTime) * (currTime - timeToMaxAchievableAccel);
-//				currPos = p1 + ((currVel + v1) * (currTime - timeToMaxAchievableAccel)) / 2;
-				currPoint[1] = currVel;
-//				currPoint[2] = currPos;
+				currPoint[1] = v1 + lookUpAccel(currTime) * (currTime - timeToMaxAchievableAccel);
 			} else if (currTime >= 0) {
-				currVel = lookUpAccel(currTime) * currTime / 2;
-//				currPos = lookUpAccel(currTime) * currTime * currTime / 6;
-				currPoint[1] = currVel;
-//				currPoint[2] = currPos;
+				currPoint[1] = lookUpAccel(currTime) * currTime / 2;
 			}
 			
-			currPos += currVel * dt;
-			currPoint[2] = currPos;
+			currPoint[2] = currPos += currPoint[1] * dt;
 			
 			double[] currPoints2 = {currPoint[0], currPoint[1], currPoint[2]};
 			points.add(currPoints2);
@@ -168,7 +132,7 @@ public class MotionProfiler {
 	
 	public static void main(String[] args) {
 		MotionProfiler test = new MotionProfiler(0.6, 0.5, 1);
-		ArrayList<double[]> points = test.generateMotionProfile(1.6, 0.01);
+		ArrayList<double[]> points = test.generateMotionProfile(1.6, 0.1);
 
 		String path = "C:/Users/Chandra/Documents/points.csv";
 		FileWriter fw = null;
@@ -188,9 +152,7 @@ public class MotionProfiler {
 			e.printStackTrace();
 		}
 		
-		int i = 0;
-		
-		while (i < points.size()) {
+		for (int i = 0; i < points.size(); i++) {
         	String result = Double.toString(points.get(i)[0]) + "," + Double.toString(points.get(i)[1]) + "," + Double.toString(points.get(i)[2]) + "\n";
         	
         	try {
@@ -198,8 +160,6 @@ public class MotionProfiler {
         	} catch (IOException e) {
         		e.printStackTrace();
         	}
-        	
-        	i++;
         }
         
         try {
